@@ -1,19 +1,23 @@
-# Original credit: https://github.com/jpetazzo/dockvpn
+ Original credit:
+# https://github.com/jpetazzo/dockvpn &
+# https://github.com/kylemanna/docker-openvpn &
+# https://github.com/jnummelin/docker-openvpn
+# https://github.com/kontena/openvpn
 
-# Smallest base image
-FROM alpine:latest
+FROM ubuntu:xenial
 
-MAINTAINER Kyle Manna <kyle@kylemanna.com>
+MAINTAINER Farfeduc
 
-# Testing: pamtester
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
-    apk add --update openvpn iptables bash easy-rsa openvpn-auth-pam google-authenticator pamtester && \
-    ln -s /usr/share/easy-rsa/easyrsa /usr/local/bin && \
-    rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
+RUN apt-get update && \
+    apt-get install -y openvpn iptables git-core netmask && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN git clone --depth 1 --branch v3.0.1 https://github.com/OpenVPN/easy-rsa.git /usr/local/share/easy-rsa && \
+    ln -s /usr/local/share/easy-rsa/easyrsa3/easyrsa /usr/local/bin
 
 # Needed by scripts
 ENV OPENVPN /etc/openvpn
-ENV EASYRSA /usr/share/easy-rsa
+ENV EASYRSA /usr/local/share/easy-rsa/easyrsa3
 ENV EASYRSA_PKI $OPENVPN/pki
 ENV EASYRSA_VARS_FILE $OPENVPN/vars
 
@@ -22,13 +26,12 @@ ENV EASYRSA_CRL_DAYS 3650
 
 VOLUME ["/etc/openvpn"]
 
-# Internally uses port 1194/udp, remap using `docker run -p 443:1194/tcp`
+# Internally uses port 1194, remap using docker
 EXPOSE 1194/udp
 
-CMD ["ovpn_run"]
+WORKDIR /etc/openvpn
+
+CMD ["start_vpn.sh"]
 
 ADD ./bin /usr/local/bin
 RUN chmod a+x /usr/local/bin/*
-
-# Add support for OTP authentication using a PAM module
-ADD ./otp/openvpn /etc/pam.d/

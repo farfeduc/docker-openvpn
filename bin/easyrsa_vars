@@ -4,11 +4,7 @@
 # Import/export EasyRSA default settings
 #
 
-if [ "$DEBUG" == "1" ]; then
-  set -x
-fi
-
-set -e
+set -ex
 
 if [ $# -lt 1 ]; then
     echo "No command provided"
